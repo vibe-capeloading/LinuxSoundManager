@@ -15,13 +15,21 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 import logging
 
-from ..models.audio_device import AudioDevice
-from ..models.audio_source import AudioSource
-from ..models.preset import Preset, EQBand, EffectPreset
-from ..core.channels import ChannelType
-from ..utils.logger import get_logger
+# Import ChannelType directly to avoid circular imports
+from enum import Enum, auto
 
-logger = get_logger(__name__)
+class ChannelType(Enum):
+    """Channel types - local copy to avoid circular imports"""
+    GAME = auto()
+    CHAT = auto()
+    MEDIA = auto()
+    AUX = auto()
+    MICROPHONE = auto()
+    MASTER = auto()
+
+
+# Set up basic logging without importing from utils
+logger = logging.getLogger(__name__)
 
 
 class ConfigManager:
@@ -43,7 +51,7 @@ class ConfigManager:
     
     def __init__(self):
         self._config: Dict[str, Any] = {}
-        self._presets: Dict[str, Preset] = {}
+        self._presets: Dict[str, Any] = {}  # Store as dicts to avoid circular imports
         self._loaded = False
         
     async def initialize(self) -> bool:
@@ -118,12 +126,7 @@ class ConfigManager:
                 return True
             
             with open(self.PRESETS_FILE, 'r', encoding='utf-8') as f:
-                presets_data = json.load(f)
-            
-            # Convert data to Preset objects
-            for preset_id, preset_data in presets_data.items():
-                preset = Preset.from_dict(preset_data)
-                self._presets[preset_id] = preset
+                self._presets = json.load(f)
             
             logger.info(f"Loaded {len(self._presets)} presets from {self.PRESETS_FILE}")
             return True
@@ -136,13 +139,8 @@ class ConfigManager:
     async def save_presets(self) -> bool:
         """Save presets to file"""
         try:
-            presets_data = {
-                preset_id: preset.to_dict()
-                for preset_id, preset in self._presets.items()
-            }
-            
             with open(self.PRESETS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(presets_data, f, indent=2, ensure_ascii=False)
+                json.dump(self._presets, f, indent=2, ensure_ascii=False)
             
             logger.info(f"Saved {len(self._presets)} presets to {self.PRESETS_FILE}")
             return True
@@ -158,7 +156,7 @@ class ConfigManager:
             "audio_engine": {
                 "sample_rate": 48000,
                 "buffer_size": 1024,
-                "latency": 0.01,
+                "latency": 0.01,  # seconds
                 "enable_spatial": False,
                 "enable_effects": True,
                 "enable_eq": True,
@@ -276,35 +274,35 @@ class ConfigManager:
         self.set_config("audio_engine.enable_effects", enabled)
     
     # Channel settings
-    def get_channel_volume(self, channel_type: ChannelType) -> float:
-        channel_name = channel_type.name.lower()
+    def get_channel_volume(self, channel_type: str) -> float:
+        channel_name = channel_type.lower() if isinstance(channel_type, str) else channel_type.name.lower()
         return self.get_config(f"channels.{channel_name}.volume", 1.0)
     
-    def set_channel_volume(self, channel_type: ChannelType, volume: float) -> None:
-        channel_name = channel_type.name.lower()
+    def set_channel_volume(self, channel_type: str, volume: float) -> None:
+        channel_name = channel_type.lower() if isinstance(channel_type, str) else channel_type.name.lower()
         self.set_config(f"channels.{channel_name}.volume", volume)
     
-    def is_channel_muted(self, channel_type: ChannelType) -> bool:
-        channel_name = channel_type.name.lower()
+    def is_channel_muted(self, channel_type: str) -> bool:
+        channel_name = channel_type.lower() if isinstance(channel_type, str) else channel_type.name.lower()
         return self.get_config(f"channels.{channel_name}.muted", False)
     
-    def set_channel_muted(self, channel_type: ChannelType, muted: bool) -> None:
-        channel_name = channel_type.name.lower()
+    def set_channel_muted(self, channel_type: str, muted: bool) -> None:
+        channel_name = channel_type.lower() if isinstance(channel_type, str) else channel_type.name.lower()
         self.set_config(f"channels.{channel_name}.muted", muted)
     
-    def is_channel_eq_enabled(self, channel_type: ChannelType) -> bool:
-        channel_name = channel_type.name.lower()
+    def is_channel_eq_enabled(self, channel_type: str) -> bool:
+        channel_name = channel_type.lower() if isinstance(channel_type, str) else channel_type.name.lower()
         return self.get_config(f"channels.{channel_name}.eq_enabled", True)
     
-    def set_channel_eq_enabled(self, channel_type: ChannelType, enabled: bool) -> None:
-        channel_name = channel_type.name.lower()
+    def set_channel_eq_enabled(self, channel_type: str, enabled: bool) -> None:
+        channel_name = channel_type.lower() if isinstance(channel_type, str) else channel_type.name.lower()
         self.set_config(f"channels.{channel_name}.eq_enabled", enabled)
     
     # Preset management
-    async def add_preset(self, preset: Preset) -> bool:
+    async def add_preset(self, preset_data: Dict[str, Any]) -> bool:
         """Add a preset to the configuration"""
         try:
-            self._presets[preset.id] = preset
+            self._presets[preset_data["id"]] = preset_data
             await self.save_presets()
             return True
         except Exception as e:
@@ -322,11 +320,11 @@ class ConfigManager:
             logger.error(f"Failed to remove preset: {e}")
             return False
     
-    def get_preset(self, preset_id: str) -> Optional[Preset]:
+    def get_preset(self, preset_id: str) -> Optional[Dict[str, Any]]:
         """Get a preset by ID"""
         return self._presets.get(preset_id)
     
-    def get_all_presets(self) -> List[Preset]:
+    def get_all_presets(self) -> List[Dict[str, Any]]:
         """Get all presets"""
         return list(self._presets.values())
     
@@ -404,8 +402,7 @@ class ConfigManager:
                 presets_data = json.load(f)
             
             for preset_id, preset_data in presets_data.items():
-                preset = Preset.from_dict(preset_data)
-                self._presets[preset_id] = preset
+                self._presets[preset_id] = preset_data
             
             await self.save_presets()
             logger.info(f"Imported {len(presets_data)} presets from {presets_path}")
@@ -418,15 +415,10 @@ class ConfigManager:
     async def export_presets(self, presets_path: str) -> bool:
         """Export presets to a file"""
         try:
-            presets_data = {
-                preset_id: preset.to_dict()
-                for preset_id, preset in self._presets.items()
-            }
-            
             with open(presets_path, 'w', encoding='utf-8') as f:
-                json.dump(presets_data, f, indent=2, ensure_ascii=False)
+                json.dump(self._presets, f, indent=2, ensure_ascii=False)
             
-            logger.info(f"Exported {len(presets_data)} presets to {presets_path}")
+            logger.info(f"Exported {len(self._presets)} presets to {presets_path}")
             return True
             
         except Exception as e:

@@ -8,7 +8,7 @@ including channel management, mixing, effects, and spatial audio.
 import asyncio
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Optional, List, Dict, Any, Callable, Awaitable
+from typing import Optional, List, Dict, Any, Callable, Awaitable, Tuple
 import numpy as np
 
 from .pipewire_manager import PipeWireManager

@@ -2,7 +2,7 @@
 Utilities for Linux Sound Manager
 """
 
-from .config_manager import ConfigManager
+# Import only what doesn't cause circular dependencies
 from .logger import get_logger, setup_logging
 from .helpers import (
     clamp,
@@ -15,7 +15,6 @@ from .helpers import (
 )
 
 __all__ = [
-    "ConfigManager",
     "get_logger",
     "setup_logging",
     "clamp",

@@ -10,15 +10,32 @@ import signal
 import sys
 from typing import Optional, List, Dict, Any
 
-from .core.audio_engine import AudioEngine, EngineState
-from .utils.config_manager import ConfigManager
+# Import logger first to avoid circular imports
 from .utils.logger import get_logger, setup_logging
 
 logger = get_logger(__name__)
 
-# Global instances
-_engine: Optional[AudioEngine] = None
-_config_manager: Optional[ConfigManager] = None
+# Global instances - will be imported lazily
+_engine = None
+_config_manager = None
+
+
+async def get_engine():
+    """Lazy import of AudioEngine to avoid circular imports"""
+    global _engine
+    if _engine is None:
+        from .core.audio_engine import AudioEngine
+        _engine = AudioEngine()
+    return _engine
+
+
+async def get_config_manager():
+    """Lazy import of ConfigManager to avoid circular imports"""
+    global _config_manager
+    if _config_manager is None:
+        from .utils.config_manager import ConfigManager
+        _config_manager = ConfigManager()
+    return _config_manager
 
 
 async def initialize_application() -> bool:
@@ -30,13 +47,13 @@ async def initialize_application() -> bool:
         setup_logging()
         
         # Initialize configuration manager
-        _config_manager = ConfigManager()
+        _config_manager = await get_config_manager()
         if not await _config_manager.initialize():
             logger.error("Failed to initialize configuration manager")
             return False
         
         # Initialize audio engine
-        _engine = AudioEngine()
+        _engine = await get_engine()
         if not await _engine.initialize():
             logger.error("Failed to initialize audio engine")
             return False
@@ -51,6 +68,8 @@ async def initialize_application() -> bool:
         
     except Exception as e:
         logger.error(f"Failed to initialize application: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
@@ -84,11 +103,12 @@ def handle_signal(signame: str) -> None:
 
 async def list_devices() -> None:
     """List all audio devices"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
-    devices = await _engine.get_devices()
+    devices = await engine.get_devices()
     
     print("\nAudio Devices:")
     print("-" * 60)
@@ -103,18 +123,19 @@ async def list_devices() -> None:
 
 async def list_sources() -> None:
     """List all audio sources"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
-    sources = await _engine.get_sources()
+    sources = await engine.get_sources()
     
     print("\nAudio Sources:")
     print("-" * 60)
     
     for source in sources:
         source_type = source.source_type.name
-        channel = await _engine.get_source_channel(source.id)
+        channel = await engine.get_source_channel(source.id)
         channel_name = channel.name if channel else "None"
         
         print(f"{source.name:30} {source_type:12} {source.state.name:10} -> {channel_name}")
@@ -124,18 +145,19 @@ async def list_sources() -> None:
 
 async def list_channels() -> None:
     """List all channels"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
-    channels = await _engine.get_channels()
+    channels = await engine.get_channels()
     
     print("\nAudio Channels:")
     print("-" * 60)
     
     for channel in channels:
         muted = "Muted" if channel.settings.muted else "Active"
-        sources = await _engine.get_sources_in_channel(channel.channel_type)
+        sources = await engine.get_sources_in_channel(channel.channel_type)
         
         print(f"{channel.name:12} Volume: {channel.settings.volume:.2f} {muted:8} Sources: {len(sources)}")
     
@@ -144,12 +166,13 @@ async def list_channels() -> None:
 
 async def list_presets() -> None:
     """List all presets"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
-    presets = await _engine.get_presets()
-    current_preset = await _engine.get_current_preset()
+    presets = await engine.get_presets()
+    current_preset = await engine.get_current_preset()
     
     print("\nPresets:")
     print("-" * 60)
@@ -165,11 +188,12 @@ async def list_presets() -> None:
 
 async def show_status() -> None:
     """Show application status"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
-    state = await _engine.get_full_state()
+    state = await engine.get_full_state()
     
     print("\nApplication Status:")
     print("-" * 60)
@@ -190,7 +214,8 @@ async def show_status() -> None:
 
 async def set_channel_volume(args: argparse.Namespace) -> None:
     """Set channel volume"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
@@ -213,7 +238,7 @@ async def set_channel_volume(args: argparse.Namespace) -> None:
             print(f"Error: Unknown channel '{channel_type}'")
             return
         
-        success = await _engine.set_channel_volume(channel_type_map[channel_type], volume)
+        success = await engine.set_channel_volume(channel_type_map[channel_type], volume)
         if success:
             print(f"Set {channel_type} volume to {volume:.2f}")
         else:
@@ -225,7 +250,8 @@ async def set_channel_volume(args: argparse.Namespace) -> None:
 
 async def set_channel_mute(args: argparse.Namespace) -> None:
     """Set channel mute state"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
@@ -248,7 +274,7 @@ async def set_channel_mute(args: argparse.Namespace) -> None:
             print(f"Error: Unknown channel '{channel_type}'")
             return
         
-        success = await _engine.set_channel_mute(channel_type_map[channel_type], muted)
+        success = await engine.set_channel_mute(channel_type_map[channel_type], muted)
         if success:
             state = "muted" if muted else "unmuted"
             print(f"Set {channel_type} to {state}")
@@ -261,13 +287,14 @@ async def set_channel_mute(args: argparse.Namespace) -> None:
 
 async def set_master_volume(args: argparse.Namespace) -> None:
     """Set master volume"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
     try:
         volume = float(getattr(args, 'volume', 1.0))
-        success = await _engine.set_master_volume(volume)
+        success = await engine.set_master_volume(volume)
         if success:
             print(f"Set master volume to {volume:.2f}")
         else:
@@ -278,7 +305,8 @@ async def set_master_volume(args: argparse.Namespace) -> None:
 
 async def assign_source(args: argparse.Namespace) -> None:
     """Assign a source to a channel"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
@@ -301,7 +329,7 @@ async def assign_source(args: argparse.Namespace) -> None:
             return
         
         # Find source by name or ID
-        sources = await _engine.get_sources()
+        sources = await engine.get_sources()
         target_source = None
         
         for source in sources:
@@ -313,7 +341,7 @@ async def assign_source(args: argparse.Namespace) -> None:
             print(f"Error: Source '{source_id}' not found")
             return
         
-        success = await _engine.assign_source_to_channel(
+        success = await engine.assign_source_to_channel(
             target_source.id, 
             channel_type_map[channel_type]
         )
@@ -329,7 +357,8 @@ async def assign_source(args: argparse.Namespace) -> None:
 
 async def apply_preset(args: argparse.Namespace) -> None:
     """Apply a preset"""
-    if not _engine:
+    engine = await get_engine()
+    if not engine:
         print("Error: Engine not initialized")
         return
     
@@ -337,7 +366,7 @@ async def apply_preset(args: argparse.Namespace) -> None:
         preset_name = getattr(args, 'preset', '')
         
         # Find preset by name or ID
-        presets = await _engine.get_presets()
+        presets = await engine.get_presets()
         target_preset = None
         
         for preset in presets:
@@ -349,7 +378,7 @@ async def apply_preset(args: argparse.Namespace) -> None:
             print(f"Error: Preset '{preset_name}' not found")
             return
         
-        success = await _engine.apply_preset(target_preset.id)
+        success = await engine.apply_preset(target_preset.id)
         if success:
             print(f"Applied preset '{target_preset.name}'")
         else:
@@ -460,6 +489,8 @@ Examples:
         print("\nInterrupted by user")
     except Exception as e:
         print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         await shutdown_application()
 
@@ -487,7 +518,7 @@ async def run_service() -> None:
 def main() -> None:
     """Main entry point"""
     # Set up signal handlers
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     
     for signame in ('SIGINT', 'SIGTERM'):
         signal.signal(

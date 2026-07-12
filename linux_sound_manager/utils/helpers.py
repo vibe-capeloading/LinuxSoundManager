@@ -4,7 +4,7 @@ Helper functions for Linux Sound Manager
 
 import math
 import numpy as np
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from scipy import signal
 
 
