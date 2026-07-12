@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	# Install Python package
+	pip3 install --prefix=/usr --root=$(CURDIR)/debian/linux-sound-manager --no-warn-script-location .
+	
+	# Install documentation
+	install -Dm644 README.md debian/linux-sound-manager/usr/share/doc/linux-sound-manager/README.md
+	install -Dm644 INSTALL.md debian/linux-sound-manager/usr/share/doc/linux-sound-manager/INSTALL.md
+	install -Dm644 LICENSE debian/linux-sound-manager/usr/share/doc/linux-sound-manager/LICENSE
+	
+	# Install systemd service
+	install -Dm644 systemd/linux-sound-manager.service \
+		debian/linux-sound-manager/usr/lib/systemd/user/linux-sound-manager.service

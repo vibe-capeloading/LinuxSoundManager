@@ -1,0 +1,22 @@
+[Unit]
+Description=Linux Sound Manager - Audio Mixer Service
+After=pipewire.service wireplumber.service
+Requires=pipewire.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/lsm --service
+Restart=on-failure
+RestartSec=5s
+Environment=PYTHONUNBUFFERED=1
+
+# Allow realtime priority for audio processing
+LimitRTTIME=infinity
+LimitRTPRIO=infinity
+LimitNICE=-20
+
+# Allow access to audio devices
+DeviceAllow=@sound
+
+[Install]
+WantedBy=default.target

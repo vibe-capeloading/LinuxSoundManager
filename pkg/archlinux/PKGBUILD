@@ -1,0 +1,38 @@
+# Maintainer: Linux Sound Manager Team
+# Contributor: Your Name <your.email@example.com>
+
+pkgname=linux-sound-manager
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="A SteelSeries Sonar-like audio mixer for Linux with PipeWire support"
+arch=("any")
+url="https://github.com/vibe-capeloading/LinuxSoundManager"
+license=("MIT")
+depends=("python" "pipewire" "wireplumber" "python-numpy" "python-scipy")
+makedepends=("python" "python-pip")
+optdepends=("easyeffects: Additional audio effects" "pavucontrol: GUI for audio control")
+source=("$pkgname-$pkgver.tar.gz::https://github.com/vibe-capeloading/LinuxSoundManager/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=("SKIP")
+
+build() {
+    cd "$pkgname-$pkgver"
+    # Nothing to build, pure Python package
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    
+    # Install Python package
+    pip install --root="$pkgdir" --no-deps --no-warn-script-location .
+    
+    # Install license
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    
+    # Install documentation
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+    install -Dm644 INSTALL.md "$pkgdir/usr/share/doc/$pkgname/INSTALL.md"
+    
+    # Install systemd user service (optional)
+    install -Dm644 systemd/linux-sound-manager.service \
+        "$pkgdir/usr/lib/systemd/user/linux-sound-manager.service"
+}

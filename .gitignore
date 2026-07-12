@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Logs
+*.log
+~/.linux_sound_manager/
+
+# Configuration files (user-specific)
+~/.linux_sound_manager/config.json
+~/.linux_sound_manager/presets.json
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Package manager files
+pkg/
+*.pkg.tar.zst
+*.pkg.tar.xz
+
+# Debian packaging
+debian/files
+
+# Arch Linux packaging
+*.pkg.tar.*

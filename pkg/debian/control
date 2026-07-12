@@ -1,0 +1,25 @@
+Source: linux-sound-manager
+Section: sound
+Priority: optional
+Maintainer: Linux Sound Manager Team <linux-sound-manager@example.com>
+Build-Depends: debhelper (>= 11), python3, python3-pip
+Standards-Version: 4.5.0
+Homepage: https://github.com/vibe-capeloading/LinuxSoundManager
+
+Package: linux-sound-manager
+Architecture: all
+Depends: ${misc:Depends}, python3, pipewire, wireplumber, python3-numpy, python3-scipy
+Recommends: easyeffects, pavucontrol
+Description: SteelSeries Sonar-like audio mixer for Linux
+ Linux Sound Manager is a powerful audio mixing application for Linux that
+ provides similar functionality to SteelSeries Sonar on Windows.
+ .
+ Features:
+  * 5 audio channels (Game, Chat, Media, Aux, Microphone)
+  * Virtual audio devices using PipeWire
+  * Parametric EQ (10 bands per channel)
+  * Audio effects (Noise Gate, Compressor, Limiter)
+  * Spatial audio with 360-degree simulation
+  * Preset management
+  * EasyEffects integration
+  * pavucontrol compatibility
