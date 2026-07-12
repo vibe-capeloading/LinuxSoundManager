@@ -132,7 +132,7 @@ function install_pipewire() {
         fedora|rhel|centos)
             sudo dnf install -y pipewire pipewire-pulseaudio pipewire-alsa pipewire-jackaudio wireplumber
             ;;
-        arch|manjaro|endeavouros)
+        arch|cachyos|manjaro|endeavouros)
             sudo pacman -S --noconfirm pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber
             ;;
         opensuse|suse)
