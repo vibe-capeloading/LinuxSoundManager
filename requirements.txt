@@ -1,0 +1,22 @@
+# Core dependencies
+numpy>=1.20.0
+scipy>=1.7.0
+
+# Async support
+asyncio-throttle>=1.0.2
+
+# Configuration and serialization
+pydantic>=1.8.0
+pyyaml>=5.4.0
+
+# System integration
+dbus-python>=1.2.16
+pygobject>=3.38.0
+
+# Optional: For better audio processing
+sounddevice>=0.4.4
+soundfile>=0.10.4
+
+# Optional: For GUI (will be added later)
+# PyQt5>=5.15.0
+# PyQt5-sip>=12.9.0
